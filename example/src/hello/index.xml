@@ -1,11 +1,11 @@
 <static-data title="Page 0" template="template-0.xml">
-    <item name="Mirko" surname="Natalin" pic="mirkonatalin">
+    <item name="Meikos" surname="Natalin" pic="mirkonatalin">
         Biography here for Miro. Lorem ispum dolor sit amen...
     </item>
-    <item name="Ai" surname="Takanashi" pic="aitakanashi">
+    <item name="Aine" surname="Matsubashi" pic="aitakanashi">
         Biography here for Takanashisan. Lorem ispum dolor sit amen...
     </item>
-    <item name="Sam" surname="Toiretto" pic="samtoiretto">
+    <item name="Jan" surname="Mairetto" pic="samtoiretto">
         Biography here for the VP of W. Lorem ispum dolor sit amen...
     </item>
 </static-data>

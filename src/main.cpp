@@ -66,6 +66,58 @@ std::vector<std::string_view> split_string (std::string_view str, char delim) {
     return result;
 }
 
+bool handle_xml_file(mg_connection *c, mg_http_message *hm, pugi::xml_document& data_xml, std::map<std::string,vs::templ::symbol>& query){
+  auto _template_filename = data_xml.root().first_child().attribute("template").as_string(nullptr);
+
+  if(strcmp(data_xml.root().first_child().name(),"static-data")==0 && _template_filename!=nullptr){
+    std::string ns = "s:";
+    std::string template_filename=std::format("{}/{}",globals.templates_dir,_template_filename);
+    pugi::xml_document template_xml;
+    auto ret = template_xml.load_file(template_filename.c_str());
+
+    if(ret.status==pugi::status_ok){
+
+      //Logic to allow templates renaming
+      {
+        for(auto& prop : template_xml.root().first_child().attributes()){
+          if(strncmp(prop.name(), "xmlns:",sizeof("xmlns:")-1)==0){
+            if(strcmp(prop.value(),"vs.templ")==0){ns =  std::string(prop.name()+6)+":";}
+          }
+          else if(strcmp(prop.name(),"xmlns")){
+            if(strcmp(prop.value(),"vs.templ")==0){ns = "";}
+          }
+        }
+      }
+      vs::templ::preprocessor preprocessor(data_xml,template_xml,ns.c_str(),logfn,+[](const char *name, pugi::xml_document& ref){
+        std::string template_filename=std::format("{}/{}",globals.templates_dir,name);
+        auto ret =ref.load_file(template_filename.c_str());
+        if(ret.status==pugi::status_ok)return true;
+        return false;
+      });
+
+      //Create the environment map
+      //TODO: escaping needed.
+
+      preprocessor.load_env(query);
+      
+      auto& result = preprocessor.parse();
+      mg_xml_writer wr(c, result.root().first_child().attribute("content-type").as_string("application/xml"));
+
+      result.save(wr);
+      return true;
+    }
+    else{
+      mg_http_reply(c, 404, "", "Template not usable!");
+      return false;
+    }
+  }
+  else{
+    mg_xml_writer wr(c, data_xml.root().first_child().attribute("content-type").as_string("application/xml"));
+    data_xml.save(wr);
+    return true;
+  }   
+}
+
 // HTTP server event handler function
 void ev_handler(mg_connection *c, int ev, void *ev_data) {
   static std::string path = std::format("{}={}",globals.public_prefix,globals.public_dir);
@@ -79,67 +131,32 @@ void ev_handler(mg_connection *c, int ev, void *ev_data) {
       mg_http_serve_dir(c, hm, &opts);
     }
     else if(mg_match(hm->method,mg_sv("GET"),NULL)){
-      std::string data_filename = std::format("{}{}.xml",globals.src_dir, std::string_view(hm->uri.buf,hm->uri.len));
+      std::map<std::string,vs::templ::concrete_symbol> query;
+      {
+        //TODO: rewrite as a linear parser, but for now this is easier to implement.
+        auto pairs = split_string({hm->query.buf,hm->query.buf+hm->query.len},'&');
+        for(auto& pair : pairs){
+          auto pieces = split_string(pair, '=');
+          if(pieces.size()>1)query.emplace(std::string(pieces[0]),std::string(pieces[1]));
+          else query.emplace(std::string(pieces[0]),true);
+        }
+      }
+
       pugi::xml_document data_xml;
-      auto ret = data_xml.load_file(data_filename.c_str());
-      if(ret.status==pugi::status_ok){
-        auto _template_filename = data_xml.root().first_child().attribute("template").as_string(nullptr);
-        if(strcmp(data_xml.root().first_child().name(),"static-data")==0 && _template_filename!=nullptr){
-          std::string ns = "s:";
-          std::string template_filename=std::format("{}/{}",globals.templates_dir,_template_filename);
-          pugi::xml_document template_xml;
-          auto ret = template_xml.load_file(template_filename.c_str());
-          if(ret.status==pugi::status_ok){
-            //Logic to allow templates renaming
-            {
-              for(auto& prop : template_xml.root().first_child().attributes()){
-                if(strncmp(prop.name(), "xmlns:",sizeof("xmlns:")-1)==0){
-                  if(strcmp(prop.value(),"vs.templ")==0){ns =  std::string(prop.name()+6)+":";}
-                }
-                else if(strcmp(prop.name(),"xmlns")){
-                  if(strcmp(prop.value(),"vs.templ")==0){ns = "";}
-                }
-              }
-            }
-            vs::templ::preprocessor preprocessor(data_xml,template_xml,ns.c_str(),logfn,+[](const char *name, pugi::xml_document& ref){
-              std::string template_filename=std::format("{}/{}",globals.templates_dir,name);
-              auto ret =ref.load_file(template_filename.c_str());
-              if(ret.status==pugi::status_ok)return true;
-              return false;
-            });
-
-            //Create the environment map
-            //TODO: escaping needed.
-            std::map<std::string,vs::templ::concrete_symbol> query;
-            {
-              //TODO: rewrite as a linear parser, but for now this is easier to implement.
-              auto pairs = split_string({hm->query.buf,hm->query.buf+hm->query.len},'&');
-              for(auto& pair : pairs){
-                auto pieces = split_string(pair, '=');
-                if(pieces.size()>1)query.emplace(std::string(pieces[0]),std::string(pieces[1]));
-                else query.emplace(std::string(pieces[0]),true);
-              }
-            }
-            preprocessor.load_env(query);
-            
-            auto& result = preprocessor.parse();
-            mg_xml_writer wr(c, result.root().first_child().attribute("content-type").as_string("application/xml"));
-
-            result.save(wr);
-  
-          }
-          else{
-            mg_http_reply(c, 404, "", "Template not usable!");
-          }
-        }
-        else{
-          mg_xml_writer wr(c, data_xml.root().first_child().attribute("content-type").as_string("application/xml"));
-          data_xml.save(wr);
-        }
+      
+      //Sequence of attempts
+      if(data_xml.load_file(std::format("{}{}",globals.src_dir, std::string_view(hm->uri.buf,hm->uri.len)).c_str()).status==pugi::status_ok){
+        if(handle_xml_file(c, hm, data_xml, query))return;
       }
-      else{
-        mg_http_reply(c, 404, "", "File not found!");
+      if(data_xml.load_file(std::format("{}{}.xml",globals.src_dir, std::string_view(hm->uri.buf,hm->uri.len)).c_str()).status==pugi::status_ok){
+        if(handle_xml_file(c, hm, data_xml, query))return;
       }
+      if(data_xml.load_file(std::format("{}{}/index.xml",globals.src_dir, std::string_view(hm->uri.buf,hm->uri.len)).c_str()).status==pugi::status_ok){
+        if(handle_xml_file(c, hm, data_xml, query))return;
+      }
+
+      mg_http_reply(c, 404, "", "File not found!");
+      
     }
     else{
       mg_http_reply(c, 412, "", "Unable to process this request");
