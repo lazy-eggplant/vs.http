@@ -1,0 +1,4 @@
+<document content-type="text/xml" xmlns:s="vs.templ">
+    <h1>Hello</h1>
+    <s:value src="{f}" />
+</document>
