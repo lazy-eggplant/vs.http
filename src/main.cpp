@@ -45,8 +45,15 @@ struct mg_xml_writer : pugi::xml_writer {
 //Utility function to avoid wasting time with strlen for const strings.
 #define mg_sv( str) {(char*)str,sizeof(str)-1}
 
-void logfn(vs::templ::log_t::values, const char* str, const vs::templ::logctx_t& ctx){
-    std::cerr<<str<<"\n";
+void logfn(vs::templ::log_t::values type, const char* msg, const vs::templ::logctx_t&){
+    static const char* severity_table[] = {
+    "\033[31;1m[ERROR]\033[0m    : ",
+    "\033[33;1m[WARNING]\033[0m  : ",
+    "\033[41;30;1m[PANIC]\033[0m    : ",
+    "\033[34;1m[INFO]\033[0m     : ",
+    };
+    //TODO show context information
+    std::cerr<<std::format("{}{} \033[33;1m@\033[0m {}",severity_table[type],msg,"xxx")<<"\n";
 }
 
 std::vector<std::string_view> split_string (std::string_view str, char delim) {

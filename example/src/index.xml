@@ -1,3 +1,11 @@
-<static-data template="template-0.xml">
-    <h1>Data here</h1>
+<static-data title="Page 0" template="template-0.xml">
+    <item name="Mirko" surname="Natalin" pic="mirkonatalin">
+        Biography here for Miro. Lorem ispum dolor sit amen...
+    </item>
+    <item name="Ai" surname="Takanashi" pic="aitakanashi">
+        Biography here for Takanashisan. Lorem ispum dolor sit amen...
+    </item>
+    <item name="Sam" surname="Toiretto" pic="samtoiretto">
+        Biography here for the VP of WC. Lorem ispum dolor sit amen...
+    </item>
 </static-data>
