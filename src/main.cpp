@@ -75,6 +75,15 @@ bool handle_xml_file(mg_connection *c, mg_http_message *hm, pugi::xml_document& 
     pugi::xml_document template_xml;
     auto ret = template_xml.load_file(template_filename.c_str());
 
+    //This would expose top level args as environment variables. Not sure if I want to have that.
+    /*for(auto& prop : data_xml.root().first_child().attributes()){
+      if(strcmp(prop.name(),"template")){
+      }
+      else{
+        query.try_emplace(prop.name(),prop.value());
+      }
+    }*/
+
     if(ret.status==pugi::status_ok){
 
       //Logic to allow templates renaming
@@ -137,8 +146,8 @@ void ev_handler(mg_connection *c, int ev, void *ev_data) {
         auto pairs = split_string({hm->query.buf,hm->query.buf+hm->query.len},'&');
         for(auto& pair : pairs){
           auto pieces = split_string(pair, '=');
-          if(pieces.size()>1)query.emplace(std::string(pieces[0]),std::string(pieces[1]));
-          else query.emplace(std::string(pieces[0]),true);
+          if(pieces.size()>1)query.try_emplace(std::string(pieces[0]),std::string(pieces[1]));
+          else query.try_emplace(std::string(pieces[0]),true);
         }
       }
 
@@ -165,6 +174,11 @@ void ev_handler(mg_connection *c, int ev, void *ev_data) {
 }
 
 int main(int argc, const char* argv[]) {
+  if(argc==2){
+    const char *config_file = argv[1];
+    //TODO: fill in `globals` based on its content.
+  }
+
   mg_mgr mgr;  // Declare event manager
   if(globals.debug)mg_log_set(MG_LL_DEBUG);
   mg_mgr_init(&mgr);  // Initialise event manager

@@ -1,0 +1,2 @@
+- [ ] configuration file
+- [ ] escaping query `%xx` symbols
