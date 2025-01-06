@@ -4,6 +4,7 @@ project(
   version: '0.1.0',
   meson_version: '>= 1.1',
   default_options: ['cpp_std=c++20'],
+  license: 'GPL-2',
 )
 
 cmake = import('cmake')

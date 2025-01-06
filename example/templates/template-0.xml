@@ -29,15 +29,15 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <s:for src="/static-data" sort-by="$~name|$~surname" filter=": true">
+                    <s:for src="/static-data" sort-by="~name|~surname" filter=": true">
                         <s:item>
                             <tr>
                                 <td>
-                                    <img s:value.src=": `#.svg` `$~pic` `#/public/pics/` cat:*"
+                                    <img s:value.src=": `#.svg` `~pic` `#/public/pics/` cat:*"
                                         s:prop.0="#width|#32px" />
                                 </td>
                                 <td>
-                                    <s:value src=": `$~surname` `$~name` `# ` join" />
+                                    <s:value src=": `~surname` `~name` `# ` join" />
                                 </td>
                                 <td>
                                     <s:value src="$~!txt" />

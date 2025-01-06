@@ -1,2 +1,3 @@
 - [ ] configuration file
 - [ ] escaping query `%xx` symbols
+- [ ] a function to statically build all final pages for SSG distribution.
