@@ -6,16 +6,19 @@
 
 #include <vs-templ.hpp>
 #include <mongoose.h>
-//#include <canfigger.h>
+
+extern "C"{
+#include <canfigger.h>
+}
 
 struct global_t{
-  const char* public_dir = "./public";            //Location of files to be served as is (resources)
-  const char* public_prefix = "/public";          //Prefix path for public files
-  const char* templates_dir = "./templates";      //Folder where templates are stored
-  const char* src_dir = "./src";                  //Folder where static data sources are located.
+  std::string public_dir = "./public";            //Location of files to be served as is (resources)
+  std::string public_prefix = "/public";          //Prefix path for public files
+  std::string templates_dir = "./templates";      //Folder where templates are stored
+  std::string src_dir = "./src";                  //Folder where static data sources are located.
 
-  const char* http_url = "http://0.0.0.0:8500";
-  const char* https_url = nullptr;
+  std::string http_url = "http://0.0.0.0:8500";
+  std::string https_url = "";
 
   bool debug = true;
 }globals;
@@ -177,13 +180,35 @@ int main(int argc, const char* argv[]) {
   if(argc==2){
     const char *config_file = argv[1];
     //TODO: fill in `globals` based on its content.
+
+    Canfigger *config = canfigger_parse_file(config_file, ',');
+    if(!config){
+      std::cerr<<"Unable to parse configuration file passed\n";
+    }
+    while (config != NULL){
+      if(false){}
+      else if(strcmp(config->key,"public_dir")==0 && config->value!=nullptr)globals.public_dir=config->value; 
+      else if(strcmp(config->key,"public_prefix")==0 && config->value!=nullptr)globals.public_prefix=config->value; 
+      else if(strcmp(config->key,"templates_dir")==0 && config->value!=nullptr)globals.templates_dir=config->value; 
+      else if(strcmp(config->key,"src_dir")==0 && config->value!=nullptr)globals.src_dir=config->value; 
+      else if(strcmp(config->key,"http_url")==0 && config->value!=nullptr)globals.http_url=config->value; 
+      else if(strcmp(config->key,"https_url")==0 && config->value!=nullptr)globals.https_url=config->value; 
+      else if(strcmp(config->key,"debug")==0 && config->value!=nullptr){
+        if(strcmp(config->key,"true")==0)globals.debug=true; 
+        else globals.debug=false;
+      }
+      else{
+        std::cerr<<std::format("\033[33;1m[WARNING]\033[0m  : Configuration property `{}` not recognized \033[33;1m@\033[0m", config->key)<<"\n";
+      }
+      canfigger_free_current_key_node_advance(&config);
+    }
   }
 
   mg_mgr mgr;  // Declare event manager
   if(globals.debug)mg_log_set(MG_LL_DEBUG);
   mg_mgr_init(&mgr);  // Initialise event manager
-  if(globals.http_url!=nullptr)mg_http_listen(&mgr, globals.http_url, ev_handler, NULL); 
-  if(globals.https_url!=nullptr)mg_http_listen(&mgr, globals.https_url, ev_handler, NULL); 
+  if(globals.http_url!="")mg_http_listen(&mgr, globals.http_url.c_str(), ev_handler, NULL); 
+  if(globals.https_url!="")mg_http_listen(&mgr, globals.https_url.c_str(), ev_handler, NULL); 
 
   for (;;) {          // Run an infinite event loop
     mg_mgr_poll(&mgr, 1000);

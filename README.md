@@ -26,8 +26,8 @@ cd example
 ../build/vs.http
 ```
 
-By default, it will load the `server.cfg` in that location. Else its default internal profile will be used.  
-A profile can also be passed as the first and only argument.
+It has an internal default profile for the folder layout.  
+Still, a custom profile can be passed as the first and only argument.
 
 ## Not in scope
 
