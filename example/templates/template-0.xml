@@ -29,7 +29,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <s:for src="/static-data" sort-by="~name|~surname" filter=": true">
+                    <s:for in="/static-data" sort-by="~name|~surname" filter=": true">
                         <s:item>
                             <tr>
                                 <td>
