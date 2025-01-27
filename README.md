@@ -8,7 +8,8 @@ If you are targetting embedded devices, you might want to configure some flags i
 
 > [!IMPORTANT]  
 > You will not be able to build it with normal meson for an [unrelated issue](https://github.com/mesonbuild/meson/pull/14073) whose PR is in waiting list.  
-> For now, you will need to patch meson manually if you really want to build this example.
+> ~~For now, you will need to patch meson manually if you really want to build this example.~~  
+> Patch has been added to meson 1.7.
 
 The current build is explicitly using static deps for portability.
 

@@ -2,6 +2,7 @@ project(
   'website',
   ['cpp'],
   version: '0.1.0',
+  #TODO: set to 1.7 once available
   meson_version: '>= 1.1',
   default_options: ['cpp_std=c++20'],
   license: 'GPL-2',

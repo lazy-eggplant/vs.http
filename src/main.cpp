@@ -100,12 +100,12 @@ bool handle_xml_file(mg_connection *c, mg_http_message *hm, pugi::xml_document& 
           }
         }
       }
-      vs::templ::preprocessor preprocessor(data_xml,template_xml,ns.c_str(),logfn,+[](const char *name, pugi::xml_document& ref){
+      vs::templ::preprocessor preprocessor({data_xml,template_xml,ns.c_str(),logfn,+[](const char *name, pugi::xml_document& ref){
         std::string template_filename=std::format("{}/{}",globals.templates_dir,name);
         auto ret =ref.load_file(template_filename.c_str());
         if(ret.status==pugi::status_ok)return true;
         return false;
-      });
+      }});
 
       //Create the environment map
       //TODO: escaping needed.
