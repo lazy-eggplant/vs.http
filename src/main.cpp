@@ -1,3 +1,4 @@
+#include "logging.hpp"
 #include "symbols.hpp"
 #include <format>
 #include <iostream>
@@ -7,9 +8,7 @@
 #include <vs-templ.hpp>
 #include <mongoose.h>
 
-extern "C"{
 #include <canfigger.h>
-}
 
 struct global_t{
   std::string public_dir = "./public";            //Location of files to be served as is (resources)
@@ -48,7 +47,7 @@ struct mg_xml_writer : pugi::xml_writer {
 //Utility function to avoid wasting time with strlen for const strings.
 #define mg_sv( str) {(char*)str,sizeof(str)-1}
 
-void logfn(vs::templ::log_t::values type, const char* msg, const vs::templ::logctx_t&){
+void logfn(vs::templ::log_t::values type, const char* msg, const vs::templ::log_t::ctx&){
     static const char* severity_table[] = {
     "\033[31;1m[ERROR]\033[0m    : ",
     "\033[33;1m[WARNING]\033[0m  : ",
@@ -143,7 +142,7 @@ void ev_handler(mg_connection *c, int ev, void *ev_data) {
       mg_http_serve_dir(c, hm, &opts);
     }
     else if(mg_match(hm->method,mg_sv("GET"),NULL)){
-      std::map<std::string,vs::templ::concrete_symbol> query;
+      std::map<std::string,vs::templ::symbol> query;
       {
         //TODO: rewrite as a linear parser, but for now this is easier to implement.
         auto pairs = split_string({hm->query.buf,hm->query.buf+hm->query.len},'&');
